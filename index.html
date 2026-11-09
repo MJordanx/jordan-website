@@ -30,7 +30,7 @@
 <body>
   <main>
     <div class="page">
-      <div class="logo-wrap" id="logo-wrap" role="img" aria-label="Three-dimensional gyroscope with independently spinning rotor and moving gimbals">
+      <div class="logo-wrap" id="logo-wrap" role="img" aria-label="Engineering gyroscope with smooth continuous precession and independently rotating rotor">
         <canvas id="gyro3d" aria-hidden="true"></canvas>
         <img class="logo-fallback" src="logo.png" alt="" aria-hidden="true">
       </div>
@@ -53,7 +53,7 @@
   </main>
   <script>document.getElementById('year').textContent=new Date().getFullYear();</script>
   <script>
-  // Self-contained 3D-projected gyroscope: no libraries, network requests or WebGL.
+  // Smooth continuous precession and independent rotor spin; no external dependencies.
   (() => {
     const canvas = document.getElementById('gyro3d');
     const wrap = document.getElementById('logo-wrap');
@@ -75,7 +75,7 @@
       const t=reduced.matches?0:time*.001;
       ctx.clearRect(0,0,width,height);
       const scale=Math.min(width/3.9,height/3.6), cx=width/2,cy=height*.49;
-      const prec=t*.23, tilt=.33+.13*Math.sin(t*.44),spin=t*3.8;
+      const prec=t*.24, tilt=.42, spin=t*2.6;
       function project(p){
         p=rotateX(p,-.26);p=rotateY(p,-.52);
         const perspective=6.8/(6.8+p[2]);
@@ -91,22 +91,43 @@
         path(pts,'#3f607b',thickness+2);path(pts,color,thickness);
       }
       function sphere(p,r,color){const q=project(p);ctx.beginPath();ctx.arc(q[0],q[1],r,0,2*Math.PI);ctx.fillStyle=color;ctx.fill();ctx.strokeStyle='#46617a';ctx.lineWidth=1;ctx.stroke();}
+      // Stationary textbook-style reference axes and italic labels.
+      ctx.save();
+      ctx.strokeStyle='rgba(60,70,79,.66)';ctx.lineWidth=1;ctx.setLineDash([6,6]);
+      const axes=[[[0,-1.85,0],[0,1.78,0]],[[-1.85,0,0],[1.85,0,0]],[[0,0,-1.85],[0,0,1.85]]];
+      for(const [a,b] of axes){const A=project(a),B=project(b);ctx.beginPath();ctx.moveTo(A[0],A[1]);ctx.lineTo(B[0],B[1]);ctx.stroke();}
+      ctx.setLineDash([]);ctx.fillStyle='#263744';ctx.font='italic 17px Georgia, serif';
+      for(const [label,p] of [['Z',[0,1.91,0]],['X',[-2.02,0,0]],['Y',[0,0,2.03]]]){
+        const q=project(p);ctx.fillText(label,q[0],q[1]);
+      }
+      ctx.restore();
       // Fixed stand and vertical shaft.
       path([[0,-1.02,0],[0,-1.70,0]],'#7798b5',15);
       path([[0,-1.02,0],[0,-1.70,0]],'#dbe7f0',9);
       sphere([0,-1.70,0],7,'#607f9a');
-      // Outer ring precesses around the vertical axis.
+      // Red rotation arrows remain fixed as diagrammatic annotations.
+      function redArrow(x,y,r,start,end){
+        ctx.strokeStyle='#cf2929';ctx.fillStyle='#cf2929';ctx.lineWidth=2.3;
+        ctx.beginPath();ctx.arc(x,y,r,start,end,false);ctx.stroke();
+        const a=end,px=x+r*Math.cos(a),py=y+r*Math.sin(a);
+        ctx.beginPath();ctx.moveTo(px,py);ctx.lineTo(px-10*Math.cos(a-.52),py-10*Math.sin(a-.52));
+        ctx.lineTo(px-10*Math.cos(a+.52),py-10*Math.sin(a+.52));ctx.closePath();ctx.fill();
+      }
+      redArrow(cx-25,cy-112,23,3.65,5.15);
+      redArrow(cx,cy+117,20,.15,2.65);
+      ctx.font='italic 16px Georgia, serif';ctx.fillStyle='#263744';ctx.fillText('N',cx+27,cy+125);
+      // Outer ring precesses smoothly around the vertical axis.
       const pre=p=>rotateY(p,prec);
       ring(a=>pre([1.32*Math.cos(a),0,1.32*Math.sin(a)]),1.32,'#b6cadc',8);
-      // Inner gimbal tilts about the moving horizontal axle.
+      // Inner gimbal maintains a fixed inclination: no oscillation or changing dimensions.
       const inner=p=>pre(rotateX(p,tilt));
       ring(a=>inner([0,1.12*Math.cos(a),1.12*Math.sin(a)]),1.12,'#8eafcc',7);
-      // Rotor disk is oriented perpendicular to the axle and has spinning spokes.
+      // Rotor spins independently about its own axle at constant angular speed.
       const rotor=p=>inner(rotateX(p,spin));
       const disc=[];for(let i=0;i<=120;i++){const a=i*Math.PI*2/120;disc.push(rotor([0,.76*Math.cos(a),.76*Math.sin(a)]));}
       path(disc,'#5a7d9c',4,'rgba(159,189,215,.24)');
-      for(let i=0;i<8;i++){
-        const a=i*Math.PI/4;
+      for(let i=0;i<12;i++){
+        const a=i*Math.PI/6;
         const p1=[0,.12*Math.cos(a),.12*Math.sin(a)];
         const p2=[0,.69*Math.cos(a),.69*Math.sin(a)];
         // Spin around the axle (X axis), not the page centre.
