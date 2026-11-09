@@ -5,34 +5,34 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="Jordan M. & Associates — Engineering Consultants, Castlebar, County Mayo, Ireland.">
   <meta name="theme-color" content="#18354a">
-  <title>Jordan M. & Associates | Engineering Consultants</title>
+  <title>Jordan M. &amp; Associates | Engineering Consultants</title>
   <style>
-    :root { color-scheme: light; --ink:#18354a; --muted:#536574; --line:#dbe2e7; }
-    * { box-sizing: border-box; }
-    body { margin:0; min-height:100vh; background:#fafbfc; color:var(--ink); font-family:Arial, Helvetica, sans-serif; }
+    :root { color-scheme:light; --ink:#18354a; --muted:#536574; }
+    * { box-sizing:border-box; }
+    body { margin:0; min-height:100vh; background:#fafbfc; color:var(--ink); font-family:Arial,Helvetica,sans-serif; }
     main { min-height:100vh; display:flex; justify-content:center; align-items:center; padding:48px 20px; }
-    .page { width:min(100%, 700px); text-align:center; }
-    .logo-wrap { height:231px; display:flex; align-items:center; justify-content:center; margin-bottom:26px; }
-    .logo { display:block; max-width:270px; max-height:225px; width:auto; height:auto; object-fit:contain; }
-    .logo-placeholder { display:none; width:112px; height:112px; border:2px solid #bccad4; border-radius:50%; align-items:center; justify-content:center; font-family:Georgia,serif; font-size:35px; color:#45647a; }
-    h1 { margin:0; font-family:Georgia, 'Times New Roman', serif; font-size:clamp(30px,5vw,44px); font-weight:normal; letter-spacing:.015em; line-height:1.2; }
+    .page { width:min(100%,700px); text-align:center; }
+    .logo-wrap { width: min(100%, 340px); height:300px; margin:0 auto 26px; position:relative; }
+    #gyro3d { display:block; width:100%; height:100%; background:transparent; }
+    .logo-fallback { position:absolute; inset:0; width:100%; height:100%; object-fit:contain; }
+    .logo-wrap.ready .logo-fallback { display:none; }
+    h1 { margin:0; font-family:Georgia,'Times New Roman',serif; font-size:clamp(30px,5vw,44px); font-weight:normal; letter-spacing:.015em; line-height:1.2; }
     .subtitle { margin:16px 0 0; color:var(--muted); text-transform:uppercase; letter-spacing:.22em; font-size:12px; font-weight:600; }
     .rule { width:65px; height:1px; margin:36px auto; background:#a7b6c1; }
     address { font-style:normal; color:#344d60; font-size:15px; line-height:1.95; }
     .contact { margin-top:22px; display:flex; flex-direction:column; gap:10px; align-items:center; font-size:15px; }
     a { color:var(--ink); text-decoration:none; border-bottom:1px solid #a8bac7; }
-    a:hover, a:focus-visible { color:#276b96; border-color:currentColor; }
+    a:hover,a:focus-visible { color:#276b96; border-color:currentColor; }
     footer { margin-top:72px; color:#7a8994; font-size:12px; }
-    @media (max-width:480px) { .logo-wrap { height:195px; } .logo { max-width:225px; max-height:189px; } .subtitle { letter-spacing:.15em; } footer { margin-top:55px; } }
+    @media(max-width:480px) { .logo-wrap { width:270px; height:245px; } .subtitle { letter-spacing:.15em; } footer { margin-top:55px; } }
   </style>
 </head>
 <body>
   <main>
     <div class="page">
-      <div class="logo-wrap">
-        <!-- Stationary gyroscope with transparent background. Keep logo.png alongside index.html. -->
-        <img class="logo" src="logo.png" alt="Jordan M. & Associates gyroscope logo" onerror="this.style.display='none';document.getElementById('logo-placeholder').style.display='flex'">
-        <div id="logo-placeholder" class="logo-placeholder" aria-hidden="true">JM</div>
+      <div class="logo-wrap" id="logo-wrap" role="img" aria-label="Three-dimensional gyroscope with independently spinning rotor and moving gimbals">
+        <canvas id="gyro3d" aria-hidden="true"></canvas>
+        <img class="logo-fallback" src="logo.png" alt="" aria-hidden="true">
       </div>
       <h1>Jordan M. &amp; Associates</h1>
       <p class="subtitle">Engineering Consultants</p>
@@ -51,6 +51,80 @@
       <footer>&copy; <span id="year">2026</span> Jordan M. &amp; Associates</footer>
     </div>
   </main>
-  <script>document.getElementById('year').textContent = new Date().getFullYear();</script>
+  <script>document.getElementById('year').textContent=new Date().getFullYear();</script>
+  <script type="module">
+    import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js';
+
+    const canvas = document.getElementById('gyro3d');
+    const wrap = document.getElementById('logo-wrap');
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+    try {
+      const renderer = new THREE.WebGLRenderer({canvas,alpha:true,antialias:true});
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2));
+      renderer.setClearColor(0x000000,0);
+      renderer.outputColorSpace=THREE.SRGBColorSpace;
+      const scene = new THREE.Scene();
+      const camera = new THREE.PerspectiveCamera(35,1,.1,100);
+      camera.position.set(5.3,3.7,7.6);
+      camera.lookAt(0,0,0);
+      scene.add(new THREE.HemisphereLight(0xffffff,0x71899f,2.1));
+      const key=new THREE.DirectionalLight(0xffffff,3.2); key.position.set(-3,7,6); scene.add(key);
+      const fill=new THREE.DirectionalLight(0xa8c9e9,1.8); fill.position.set(5,-2,-5); scene.add(fill);
+      const silver=new THREE.MeshStandardMaterial({color:0xc0cedc,metalness:.83,roughness:.22,side:THREE.DoubleSide});
+      const blue=new THREE.MeshStandardMaterial({color:0x7397ba,metalness:.78,roughness:.27,side:THREE.DoubleSide});
+      const edge=new THREE.MeshStandardMaterial({color:0x314d65,metalness:.72,roughness:.3});
+      const accent=new THREE.MeshStandardMaterial({color:0xd9e3ed,metalness:.9,roughness:.17});
+      const root=new THREE.Group();scene.add(root);
+      const base=new THREE.Mesh(new THREE.CylinderGeometry(.12,.15,.65,32),silver);base.position.y=-1.53;root.add(base);
+      const foot=new THREE.Mesh(new THREE.CylinderGeometry(.22,.22,.07,40),edge);foot.position.y=-1.87;root.add(foot);
+      const support=new THREE.Mesh(new THREE.CylinderGeometry(.10,.10,.30,24),accent);support.position.y=-1.08;root.add(support);
+      const precession=new THREE.Group();root.add(precession);
+      // The outer gimbal is a torus in the horizontal XZ plane.
+      const outer=new THREE.Mesh(new THREE.TorusGeometry(1.34,.095,18,120),silver);
+      outer.rotation.x=Math.PI/2;precession.add(outer);
+      for(const s of [-1,1]){
+        const bearing=new THREE.Mesh(new THREE.SphereGeometry(.13,20,14),edge);
+        bearing.position.x=s*1.34;precession.add(bearing);
+      }
+      // The inner gimbal tilts about the outer ring's X-axis.
+      const tilt=new THREE.Group();precession.add(tilt);
+      const inner=new THREE.Mesh(new THREE.TorusGeometry(1.12,.087,18,120),blue);
+      inner.rotation.y=Math.PI/2;tilt.add(inner);
+      const axle=new THREE.Mesh(new THREE.CylinderGeometry(.065,.065,2.38,24),accent);
+      axle.rotation.z=Math.PI/2;tilt.add(axle);
+      for(const s of [-1,1]){
+        const hub=new THREE.Mesh(new THREE.CylinderGeometry(.15,.15,.13,32),edge);
+        hub.rotation.z=Math.PI/2;hub.position.x=s*1.12;tilt.add(hub);
+      }
+      // The rotor spins independently around the axle (local X-axis).
+      const rotor=new THREE.Group();tilt.add(rotor);
+      const disk=new THREE.Mesh(new THREE.CylinderGeometry(.79,.79,.19,72),silver);
+      disk.rotation.z=Math.PI/2;rotor.add(disk);
+      const rim=new THREE.Mesh(new THREE.TorusGeometry(.78,.055,14,96),edge);
+      rim.rotation.y=Math.PI/2;rotor.add(rim);
+      for(let i=0;i<8;i++){
+        const spoke=new THREE.Mesh(new THREE.BoxGeometry(.018,.64,.045),blue);
+        spoke.position.x=.104;spoke.position.y=.38;spoke.rotation.x=i*Math.PI/4;
+        // Rotating the spoke position around the axle gives visible rotor motion.
+        spoke.position.set(.104,Math.cos(i*Math.PI/4)*.38,Math.sin(i*Math.PI/4)*.38);
+        spoke.rotation.x=i*Math.PI/4;rotor.add(spoke);
+      }
+      const center=new THREE.Mesh(new THREE.SphereGeometry(.16,24,16),accent);rotor.add(center);
+      const resize=()=>{const w=wrap.clientWidth,h=wrap.clientHeight;renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();};
+      new ResizeObserver(resize).observe(wrap);resize();
+      const clock=new THREE.Clock();
+      const render=()=>{
+        const t=clock.getElapsedTime();
+        if(!reducedMotion.matches){
+          precession.rotation.y=t*.22;
+          tilt.rotation.x=.32+Math.sin(t*.35)*.15;
+          rotor.rotation.x=t*4.5;
+        } else {precession.rotation.y=.35;tilt.rotation.x=.36;rotor.rotation.x=.4;}
+        renderer.render(scene,camera);
+      };
+      render();wrap.classList.add('ready');
+      renderer.setAnimationLoop(render);
+    } catch(err) { console.error('3D gyroscope unavailable; displaying original logo.',err); }
+  </script>
 </body>
 </html>
