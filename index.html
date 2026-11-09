@@ -52,79 +52,77 @@
     </div>
   </main>
   <script>document.getElementById('year').textContent=new Date().getFullYear();</script>
-  <script type="module">
-    import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js';
-
+  <script>
+  // Self-contained 3D-projected gyroscope: no libraries, network requests or WebGL.
+  (() => {
     const canvas = document.getElementById('gyro3d');
     const wrap = document.getElementById('logo-wrap');
-    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
-    try {
-      const renderer = new THREE.WebGLRenderer({canvas,alpha:true,antialias:true});
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2));
-      renderer.setClearColor(0x000000,0);
-      renderer.outputColorSpace=THREE.SRGBColorSpace;
-      const scene = new THREE.Scene();
-      const camera = new THREE.PerspectiveCamera(35,1,.1,100);
-      camera.position.set(5.3,3.7,7.6);
-      camera.lookAt(0,0,0);
-      scene.add(new THREE.HemisphereLight(0xffffff,0x71899f,2.1));
-      const key=new THREE.DirectionalLight(0xffffff,3.2); key.position.set(-3,7,6); scene.add(key);
-      const fill=new THREE.DirectionalLight(0xa8c9e9,1.8); fill.position.set(5,-2,-5); scene.add(fill);
-      const silver=new THREE.MeshStandardMaterial({color:0xc0cedc,metalness:.83,roughness:.22,side:THREE.DoubleSide});
-      const blue=new THREE.MeshStandardMaterial({color:0x7397ba,metalness:.78,roughness:.27,side:THREE.DoubleSide});
-      const edge=new THREE.MeshStandardMaterial({color:0x314d65,metalness:.72,roughness:.3});
-      const accent=new THREE.MeshStandardMaterial({color:0xd9e3ed,metalness:.9,roughness:.17});
-      const root=new THREE.Group();scene.add(root);
-      const base=new THREE.Mesh(new THREE.CylinderGeometry(.12,.15,.65,32),silver);base.position.y=-1.53;root.add(base);
-      const foot=new THREE.Mesh(new THREE.CylinderGeometry(.22,.22,.07,40),edge);foot.position.y=-1.87;root.add(foot);
-      const support=new THREE.Mesh(new THREE.CylinderGeometry(.10,.10,.30,24),accent);support.position.y=-1.08;root.add(support);
-      const precession=new THREE.Group();root.add(precession);
-      // The outer gimbal is a torus in the horizontal XZ plane.
-      const outer=new THREE.Mesh(new THREE.TorusGeometry(1.34,.095,18,120),silver);
-      outer.rotation.x=Math.PI/2;precession.add(outer);
-      for(const s of [-1,1]){
-        const bearing=new THREE.Mesh(new THREE.SphereGeometry(.13,20,14),edge);
-        bearing.position.x=s*1.34;precession.add(bearing);
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const rotateX = (p,a) => [p[0],p[1]*Math.cos(a)-p[2]*Math.sin(a),p[1]*Math.sin(a)+p[2]*Math.cos(a)];
+    const rotateY = (p,a) => [p[0]*Math.cos(a)+p[2]*Math.sin(a),p[1],-p[0]*Math.sin(a)+p[2]*Math.cos(a)];
+    const rotateZ = (p,a) => [p[0]*Math.cos(a)-p[1]*Math.sin(a),p[0]*Math.sin(a)+p[1]*Math.cos(a),p[2]];
+    let width=340,height=300;
+    function resize(){
+      const r=wrap.getBoundingClientRect(),dpr=Math.min(devicePixelRatio||1,2);
+      width=r.width;height=r.height;
+      canvas.width=Math.round(width*dpr);canvas.height=Math.round(height*dpr);
+      ctx.setTransform(dpr,0,0,dpr,0,0);
+    }
+    window.addEventListener('resize',resize);resize();
+    function draw(time){
+      const t=reduced.matches?0:time*.001;
+      ctx.clearRect(0,0,width,height);
+      const scale=Math.min(width/3.9,height/3.6), cx=width/2,cy=height*.49;
+      const prec=t*.23, tilt=.33+.13*Math.sin(t*.44),spin=t*3.8;
+      function project(p){
+        p=rotateX(p,-.26);p=rotateY(p,-.52);
+        const perspective=6.8/(6.8+p[2]);
+        return [cx+p[0]*scale*perspective,cy-p[1]*scale*perspective,p[2]];
       }
-      // The inner gimbal tilts about the outer ring's X-axis.
-      const tilt=new THREE.Group();precession.add(tilt);
-      const inner=new THREE.Mesh(new THREE.TorusGeometry(1.12,.087,18,120),blue);
-      inner.rotation.y=Math.PI/2;tilt.add(inner);
-      const axle=new THREE.Mesh(new THREE.CylinderGeometry(.065,.065,2.38,24),accent);
-      axle.rotation.z=Math.PI/2;tilt.add(axle);
-      for(const s of [-1,1]){
-        const hub=new THREE.Mesh(new THREE.CylinderGeometry(.15,.15,.13,32),edge);
-        hub.rotation.z=Math.PI/2;hub.position.x=s*1.12;tilt.add(hub);
+      function path(points,stroke,lineWidth=3,fill=null){
+        ctx.beginPath();points.forEach((p,i)=>{const q=project(p);i?ctx.lineTo(q[0],q[1]):ctx.moveTo(q[0],q[1]);});
+        if(fill){ctx.fillStyle=fill;ctx.fill();}
+        ctx.strokeStyle=stroke;ctx.lineWidth=lineWidth;ctx.lineJoin='round';ctx.stroke();
       }
-      // The rotor spins independently around the axle (local X-axis).
-      const rotor=new THREE.Group();tilt.add(rotor);
-      const disk=new THREE.Mesh(new THREE.CylinderGeometry(.79,.79,.19,72),silver);
-      disk.rotation.z=Math.PI/2;rotor.add(disk);
-      const rim=new THREE.Mesh(new THREE.TorusGeometry(.78,.055,14,96),edge);
-      rim.rotation.y=Math.PI/2;rotor.add(rim);
+      function ring(point, radius, color, thickness=7){
+        const pts=[];for(let i=0;i<=160;i++)pts.push(point(i*Math.PI*2/160,radius));
+        path(pts,'#3f607b',thickness+2);path(pts,color,thickness);
+      }
+      function sphere(p,r,color){const q=project(p);ctx.beginPath();ctx.arc(q[0],q[1],r,0,2*Math.PI);ctx.fillStyle=color;ctx.fill();ctx.strokeStyle='#46617a';ctx.lineWidth=1;ctx.stroke();}
+      // Fixed stand and vertical shaft.
+      path([[0,-1.02,0],[0,-1.70,0]],'#7798b5',15);
+      path([[0,-1.02,0],[0,-1.70,0]],'#dbe7f0',9);
+      sphere([0,-1.70,0],7,'#607f9a');
+      // Outer ring precesses around the vertical axis.
+      const pre=p=>rotateY(p,prec);
+      ring(a=>pre([1.32*Math.cos(a),0,1.32*Math.sin(a)]),1.32,'#b6cadc',8);
+      // Inner gimbal tilts about the moving horizontal axle.
+      const inner=p=>pre(rotateX(p,tilt));
+      ring(a=>inner([0,1.12*Math.cos(a),1.12*Math.sin(a)]),1.12,'#8eafcc',7);
+      // Rotor disk is oriented perpendicular to the axle and has spinning spokes.
+      const rotor=p=>inner(rotateX(p,spin));
+      const disc=[];for(let i=0;i<=120;i++){const a=i*Math.PI*2/120;disc.push(rotor([0,.76*Math.cos(a),.76*Math.sin(a)]));}
+      path(disc,'#5a7d9c',4,'rgba(159,189,215,.24)');
       for(let i=0;i<8;i++){
-        const spoke=new THREE.Mesh(new THREE.BoxGeometry(.018,.64,.045),blue);
-        spoke.position.x=.104;spoke.position.y=.38;spoke.rotation.x=i*Math.PI/4;
-        // Rotating the spoke position around the axle gives visible rotor motion.
-        spoke.position.set(.104,Math.cos(i*Math.PI/4)*.38,Math.sin(i*Math.PI/4)*.38);
-        spoke.rotation.x=i*Math.PI/4;rotor.add(spoke);
+        const a=i*Math.PI/4;
+        const p1=[0,.12*Math.cos(a),.12*Math.sin(a)];
+        const p2=[0,.69*Math.cos(a),.69*Math.sin(a)];
+        // Spin around the axle (X axis), not the page centre.
+        const r1=inner(rotateX(p1,spin)),r2=inner(rotateX(p2,spin));
+        path([r1,r2],i%2?'#9dbad3':'#426d93',3);
       }
-      const center=new THREE.Mesh(new THREE.SphereGeometry(.16,24,16),accent);rotor.add(center);
-      const resize=()=>{const w=wrap.clientWidth,h=wrap.clientHeight;renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();};
-      new ResizeObserver(resize).observe(wrap);resize();
-      const clock=new THREE.Clock();
-      const render=()=>{
-        const t=clock.getElapsedTime();
-        if(!reducedMotion.matches){
-          precession.rotation.y=t*.22;
-          tilt.rotation.x=.32+Math.sin(t*.35)*.15;
-          rotor.rotation.x=t*4.5;
-        } else {precession.rotation.y=.35;tilt.rotation.x=.36;rotor.rotation.x=.4;}
-        renderer.render(scene,camera);
-      };
-      render();wrap.classList.add('ready');
-      renderer.setAnimationLoop(render);
-    } catch(err) { console.error('3D gyroscope unavailable; displaying original logo.',err); }
+      // Central axle and end bearings.
+      path([inner([-.99,0,0]),inner([.99,0,0])],'#536f89',10);
+      path([inner([-.99,0,0]),inner([.99,0,0])],'#dce8f0',6);
+      sphere(inner([0,0,0]),7,'#e5eef5');
+      sphere(pre([1.32,0,0]),5,'#dce8f0');sphere(pre([-1.32,0,0]),5,'#dce8f0');
+      if(!reduced.matches) requestAnimationFrame(draw);
+    }
+    wrap.classList.add('ready');
+    requestAnimationFrame(draw);
+  })();
   </script>
 </body>
 </html>
