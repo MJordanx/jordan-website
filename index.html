@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Jordan M. & Associates — Engineering Consultants, Castlebar, County Mayo, Ireland.">
+  <meta name="theme-color" content="#18354a">
+  <title>Jordan M. & Associates | Engineering Consultants</title>
+  <style>
+    :root { color-scheme: light; --ink:#18354a; --muted:#536574; --line:#dbe2e7; }
+    * { box-sizing: border-box; }
+    body { margin:0; min-height:100vh; background:#fafbfc; color:var(--ink); font-family:Arial, Helvetica, sans-serif; }
+    main { min-height:100vh; display:flex; justify-content:center; align-items:center; padding:48px 20px; }
+    .page { width:min(100%, 700px); text-align:center; }
+    .logo-wrap { height:154px; display:flex; align-items:center; justify-content:center; margin-bottom:26px; }
+    .logo { display:block; max-width:180px; max-height:150px; width:auto; height:auto; object-fit:contain; }
+    .logo-placeholder { display:none; width:112px; height:112px; border:2px solid #bccad4; border-radius:50%; align-items:center; justify-content:center; font-family:Georgia,serif; font-size:35px; color:#45647a; }
+    h1 { margin:0; font-family:Georgia, 'Times New Roman', serif; font-size:clamp(30px,5vw,44px); font-weight:normal; letter-spacing:.015em; line-height:1.2; }
+    .subtitle { margin:16px 0 0; color:var(--muted); text-transform:uppercase; letter-spacing:.22em; font-size:12px; font-weight:600; }
+    .rule { width:65px; height:1px; margin:36px auto; background:#a7b6c1; }
+    address { font-style:normal; color:#344d60; font-size:15px; line-height:1.95; }
+    .contact { margin-top:22px; display:flex; flex-direction:column; gap:10px; align-items:center; font-size:15px; }
+    a { color:var(--ink); text-decoration:none; border-bottom:1px solid #a8bac7; }
+    a:hover, a:focus-visible { color:#276b96; border-color:currentColor; }
+    footer { margin-top:72px; color:#7a8994; font-size:12px; }
+    @media (max-width:480px) { .logo-wrap { height:130px; } .logo { max-height:126px; } .subtitle { letter-spacing:.15em; } footer { margin-top:55px; } }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="page">
+      <div class="logo-wrap">
+        <!-- Upload your existing gyroscope logo as logo.svg, logo.png, or logo.gif.
+             If using PNG or GIF, change the filename in src below. Animated GIFs
+             and animated SVGs retain their animation automatically. -->
+        <img class="logo" src="logo.svg" alt="Jordan M. & Associates gyroscope logo" onerror="this.style.display='none';document.getElementById('logo-placeholder').style.display='flex'">
+        <div id="logo-placeholder" class="logo-placeholder" aria-hidden="true">JM</div>
+      </div>
+      <h1>Jordan M. &amp; Associates</h1>
+      <p class="subtitle">Engineering Consultants</p>
+      <div class="rule" aria-hidden="true"></div>
+      <address>
+        Unit 15, N5 Business Park<br>
+        Moneen, Castlebar<br>
+        Co. Mayo, F23 H682<br>
+        Ireland
+      </address>
+      <div class="contact">
+        <a href="tel:+353949026452">+353 94 902 6452</a>
+        <a href="mailto:mjordan@eircom.net">mjordan@eircom.net</a>
+      </div>
+      <footer>&copy; <span id="year">2026</span> Jordan M. &amp; Associates</footer>
+    </div>
+  </main>
+  <script>document.getElementById('year').textContent = new Date().getFullYear();</script>
+</body>
+</html>
